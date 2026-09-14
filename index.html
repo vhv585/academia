@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151A23">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cargas">
+<title>Registro de cargas</title>
+<style>
+:root{
+  --noite:#151A23;
+  --placa:#1E2531;
+  --placa-alta:#28303E;
+  --linha:#333D4D;
+  --giz:#E9EDF2;
+  --giz-fraco:#8D9AAC;
+  --ambar:#F0A038;
+  --ambar-escuro:#8A5B18;
+  --verde:#5FAE7E;
+  --verde-escuro:#1F4433;
+  --alerta:#E0745C;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--noite);color:var(--giz);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.5;
+  padding-bottom:calc(120px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+.wrap{max-width:560px;margin:0 auto;padding:0 14px}
+
+/* ---------- topo ---------- */
+header{
+  position:sticky;top:0;z-index:30;background:rgba(21,26,35,.94);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--linha);
+  padding-top:env(safe-area-inset-top);
+}
+.htop{display:flex;align-items:baseline;gap:10px;padding:14px 0 4px}
+.hsigla{
+  font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;
+  color:var(--ambar);
+}
+.hdata{font-size:13px;color:var(--giz-fraco);flex:1}
+.hmenu{font-size:22px;color:var(--giz-fraco);padding:6px 10px;margin:-6px -10px}
+.prog{display:flex;gap:5px;padding:0 0 13px}
+.prog i{flex:1;height:4px;border-radius:99px;background:var(--linha)}
+.prog i.on{background:var(--verde)}
+.prog i.now{background:var(--ambar)}
+
+/* ---------- avisos ---------- */
+.nota{
+  background:var(--placa);border-left:3px solid var(--ambar);
+  border-radius:0 10px 10px 0;padding:12px 14px;margin:14px 0;
+  font-size:13.5px;color:var(--giz-fraco);line-height:1.55;
+}
+.nota b{color:var(--giz);font-weight:600}
+
+/* ---------- exercício ---------- */
+.ex{
+  background:var(--placa);border-radius:var(--r);
+  margin:10px 0;overflow:hidden;
+  border:1px solid transparent;transition:border-color .2s;
+}
+.ex.completo{border-color:var(--verde-escuro)}
+.ex.ativo{border-color:var(--ambar-escuro)}
+.exhead{display:flex;align-items:center;gap:10px;padding:14px 15px 10px}
+.exnome{font-size:16px;font-weight:600;flex:1;line-height:1.3}
+.exmeta{font-size:12px;color:var(--giz-fraco);white-space:nowrap}
+
+.excorpo{display:flex;align-items:center;gap:14px;padding:0 15px 15px}
+
+/* carga */
+.carga{display:flex;align-items:center;gap:10px}
+.step{
+  width:46px;height:46px;border-radius:12px;background:var(--placa-alta);
+  font-size:24px;font-weight:600;color:var(--giz);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step:active{background:var(--linha)}
+.cargaval{text-align:center;min-width:74px}
+.cargaval .n{
+  font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.cargaval .u{font-size:11px;color:var(--giz-fraco);display:block;margin-top:3px}
+.cargaval.vazio .n{color:var(--giz-fraco);font-weight:600}
+
+/* séries */
+.series{display:flex;gap:8px;margin-left:auto}
+.serie{
+  width:46px;height:46px;border-radius:50%;
+  border:2px solid var(--linha);background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:var(--giz-fraco);flex-shrink:0;
+  transition:transform .12s;
+}
+.serie.feita{background:var(--verde);border-color:var(--verde);color:#10251B}
+.serie:active{transform:scale(.9)}
+
+.ant{
+  padding:0 15px 13px;font-size:12.5px;color:var(--giz-fraco);
+  display:flex;align-items:center;gap:7px;
+}
+.ant .seta{color:var(--verde);font-weight:700}
+.ant .seta.baixa{color:var(--alerta)}
+
+/* pergunta de progressão */
+.prox{padding:0 15px 15px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.prox span{font-size:13px;color:var(--giz-fraco);width:100%;margin-bottom:2px}
+.pbtn{
+  padding:10px 16px;border-radius:10px;background:var(--placa-alta);
+  font-size:14px;font-weight:600;
+}
+.pbtn.sim{background:var(--verde-escuro);color:var(--verde)}
+.pbtn:active{opacity:.7}
+
+/* ---------- descanso ---------- */
+#descanso{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:var(--placa-alta);border-top:1px solid var(--linha);
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  display:none;align-items:center;gap:16px;
+  max-width:560px;margin:0 auto;
+}
+#descanso.on{display:flex}
+#descanso .tempo{
+  font-size:40px;font-weight:800;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;line-height:1;color:var(--ambar);min-width:96px;
+}
+#descanso .rot{font-size:12.5px;color:var(--giz-fraco);flex:1;line-height:1.4}
+#descanso .pular{
+  padding:12px 18px;border-radius:11px;background:var(--placa);
+  font-size:14px;font-weight:600;
+}
+.barra{position:absolute;left:0;top:0;height:3px;background:var(--ambar);transition:width 1s linear}
+
+/* ---------- rodapé de ação ---------- */
+.acao{margin:22px 0 34px}
+.abtn{
+  display:block;width:100%;padding:17px;border-radius:var(--r);
+  background:var(--ambar);color:#20160A;font-size:16px;font-weight:700;text-align:center;
+}
+.abtn:active{opacity:.85}
+.abtn.fraco{background:var(--placa);color:var(--giz-fraco);font-weight:600;margin-top:9px}
+
+/* ---------- resumo ---------- */
+.resumo{
+  background:var(--placa);border-radius:var(--r);padding:18px 16px;margin:14px 0;
+}
+.resumo h2{margin:0 0 3px;font-size:17px;font-weight:700}
+.resumo p{margin:0;font-size:13.5px;color:var(--giz-fraco);line-height:1.55}
+.nums{display:flex;gap:26px;margin-top:16px}
+.num .v{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.num .l{font-size:11.5px;color:var(--giz-fraco);margin-top:4px}
+
+/* ---------- histórico ---------- */
+.hist{background:var(--placa);border-radius:var(--r);padding:16px;margin:10px 0}
+.hist h3{margin:0 0 12px;font-size:15px;font-weight:600}
+.hlin{display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid var(--linha)}
+.hlin:first-of-type{border-top:none}
+.hnome{flex:1;font-size:13.5px;line-height:1.35}
+.hvals{display:flex;gap:5px;align-items:flex-end;height:28px}
+.hbar{width:9px;background:var(--linha);border-radius:2px;min-height:3px}
+.hbar.ult{background:var(--ambar)}
+.hcarga{font-size:15px;font-weight:700;min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.vazio{color:var(--giz-fraco);font-size:13.5px;padding:8px 0;line-height:1.55}
+
+/* ---------- painel ---------- */
+#painel{
+  position:fixed;inset:0;z-index:50;background:rgba(10,13,18,.75);
+  display:none;align-items:flex-end;
+}
+#painel.on{display:flex}
+.pcard{
+  background:var(--placa);width:100%;max-width:560px;margin:0 auto;
+  border-radius:18px 18px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  max-height:88vh;overflow:auto;
+}
+.pcard h2{margin:0 0 14px;font-size:18px;font-weight:700}
+.pbot{
+  display:block;width:100%;text-align:left;padding:15px;border-radius:11px;
+  background:var(--placa-alta);margin-bottom:9px;font-size:15px;
+}
+.pbot small{display:block;color:var(--giz-fraco);font-size:12.5px;margin-top:3px;line-height:1.45}
+.pbot.perigo{color:var(--alerta)}
+.pdata{cursor:default}
+.pdata label{display:block;font-size:15px;margin-bottom:2px}
+.dlinha{display:flex;gap:9px;margin:11px 0 4px}
+.dlinha input{
+  flex:1;min-width:0;background:var(--placa);border:1px solid var(--linha);
+  color:var(--giz);font-family:inherit;font-size:15px;
+  padding:12px;border-radius:10px;
+}
+.dsalvar{
+  padding:12px 18px;border-radius:10px;background:var(--ambar);
+  color:#20160A;font-size:14px;font-weight:700;flex-shrink:0;
+}
+.dsalvar:active{opacity:.85}
+
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:130px;z-index:60;
+  background:var(--giz);color:var(--noite);padding:12px 18px;border-radius:11px;
+  font-size:14px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;
+  max-width:88vw;text-align:center;
+}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="wrap">
+  <div class="htop">
+   <span class="hsigla" id="sigla">A</span>
+   <span class="hdata" id="data"></span>
+   <button class="hmenu" id="btMenu" aria-label="Menu">☰</button>
+  </div>
+  <div class="prog" id="prog"></div>
+ </div>
+</header>
+
+<main class="wrap" id="app"></main>
+
+<div id="descanso">
+ <div class="barra" id="barra"></div>
+ <div class="tempo" id="tempo">1:30</div>
+ <div class="rot" id="rotulo">Descanso</div>
+ <button class="pular" id="btPular">Pular</button>
+</div>
+
+<div id="painel">
+ <div class="pcard">
+  <h2>Registro de cargas</h2>
+  <div class="pbot pdata">
+   <label for="inicio">Data de início do treino</label>
+   <small>Define a contagem de semanas. As duas primeiras são de adaptação, com uma série a menos.</small>
+   <div class="dlinha">
+    <input type="date" id="inicio">
+    <button class="dsalvar" id="btSalvarData">Salvar</button>
+   </div>
+   <small id="dataInfo"></small>
+  </div>
+  <button class="pbot" id="btTrocar">Trocar o treino de hoje
+   <small id="trocarInfo"></small></button>
+  <button class="pbot" id="btHist">Ver histórico de cargas
+   <small>Evolução de cada aparelho ao longo das semanas</small></button>
+  <button class="pbot" id="btExport">Salvar cópia dos dados
+   <small>Baixa um arquivo. Faça isso uma vez por mês</small></button>
+  <button class="pbot" id="btImport">Restaurar de uma cópia
+   <small>Substitui tudo pelo conteúdo do arquivo</small></button>
+  <button class="pbot perigo" id="btZerar">Apagar tudo</button>
+  <button class="pbot" id="btFechar" style="text-align:center;background:none;color:var(--giz-fraco)">Fechar</button>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="arq" accept="application/json" style="display:none">
+
+<script>
+/* ============================================================
+   Registro de cargas · treino A/B, 3x por semana
+   Dados ficam no navegador deste aparelho (localStorage).
+   Nenhuma requisição externa: funciona sem internet.
+   ============================================================ */
+
+var TREINOS={
+ A:{nome:"Treino A",ex:[
+  {id:"legpress", n:"Leg press",                 s:3,r:"12",  passo:5,   desc:120},
+  {id:"puxada",   n:"Puxada frontal",            s:3,r:"12",  passo:5,   desc:90},
+  {id:"supino",   n:"Supino na máquina",         s:3,r:"12",  passo:5,   desc:90},
+  {id:"flexora",  n:"Mesa flexora",              s:3,r:"12",  passo:5,   desc:90},
+  {id:"lateral",  n:"Elevação lateral",          s:2,r:"15",  passo:1,   desc:60, tipo:"halter"},
+  {id:"prancha",  n:"Prancha",                   s:3,r:"30s", passo:5,   desc:60, tipo:"tempo"}
+ ]},
+ B:{nome:"Treino B",ex:[
+  {id:"extensora",n:"Cadeira extensora",         s:3,r:"12",  passo:5,   desc:120},
+  {id:"remada",   n:"Remada sentada",            s:3,r:"12",  passo:5,   desc:90},
+  {id:"desenv",   n:"Desenvolvimento sentado",   s:3,r:"12",  passo:2,   desc:90, tipo:"halter"},
+  {id:"pelvica",  n:"Elevação pélvica",          s:3,r:"12",  passo:5,   desc:90},
+  {id:"rosca",    n:"Rosca direta",              s:2,r:"12",  passo:1,   desc:60, tipo:"halter"},
+  {id:"triceps",  n:"Tríceps na corda",          s:2,r:"12",  passo:2.5, desc:60},
+  {id:"abdominal",n:"Abdominal",                 s:3,r:"15",  passo:5,   desc:60, tipo:"tempo"}
+ ]}
+};
+var CHAVE="cargas.v1";
+var S={sessoes:[],atual:null};
+var timer=null,restam=0,total=0,wake=null;
+
+/* ---------- persistência ---------- */
+function carregar(){
+ try{var r=localStorage.getItem(CHAVE);if(r)S=JSON.parse(r);}catch(e){}
+ if(!S.sessoes)S.sessoes=[];
+}
+function salvar(){
+ try{localStorage.setItem(CHAVE,JSON.stringify(S));}
+ catch(e){aviso("Não deu para salvar neste navegador");}
+}
+function hojeISO(){
+ var d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function fmtData(iso){
+ var D=["dom","seg","ter","qua","qui","sex","sáb"],
+     M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+ var p=iso.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);
+ return D[d.getDay()]+" "+p[2]+" "+M[+p[1]-1];
+}
+function aviso(t){
+ var el=document.getElementById("toast");
+ el.textContent=t;el.classList.add("on");
+ clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("on");},2600);
+}
+
+/* ---------- regras ---------- */
+function feitas(){return S.sessoes.filter(function(s){return s.fim;});}
+function proximoTipo(){
+ var f=feitas();
+ if(!f.length)return "A";
+ return f[f.length-1].tipo==="A"?"B":"A";
+}
+/* data que abre a contagem: a escolhida por você ou, sem ela, o primeiro treino */
+function inicioISO(){
+ if(S.inicio)return S.inicio;
+ var f=feitas();
+ return f.length?f[0].data:null;
+}
+/* semana 1 e 2 são de adaptação: uma série a menos */
+function semana(){
+ var ini=inicioISO();
+ if(!ini)return 1;
+ var p=ini.split("-"),d0=new Date(+p[0],+p[1]-1,+p[2]);
+ var h=hojeISO().split("-"),d1=new Date(+h[0],+h[1]-1,+h[2]);
+ var dias=Math.floor((d1-d0)/864e5);
+ if(dias<0)return 1;                    /* início no futuro: ainda é a semana 1 */
+ return Math.floor(dias/7)+1;
+}
+function adaptacao(){return semana()<=2;}
+function alvoSeries(ex){
+ return adaptacao()?Math.max(2,ex.s-1):ex.s;
+}
+/* última carga registrada de um exercício */
+function ultima(exId){
+ var f=feitas();
+ for(var i=f.length-1;i>=0;i--){
+  var d=f[i].dados[exId];
+  if(d&&d.carga!=null)return {carga:d.carga,facil:d.facil,data:f[i].data};
+ }
+ return null;
+}
+function sugerida(ex){
+ var u=ultima(ex.id);
+ if(!u)return null;
+ return u.facil?u.carga+ex.passo:u.carga;
+}
+function serie(exId){
+ var f=feitas(),out=[];
+ f.forEach(function(s){
+  var d=s.dados[exId];
+  if(d&&d.carga!=null)out.push(d.carga);
+ });
+ return out;
+}
+
+/* ---------- sessão ---------- */
+function abrirSessao(tipo){
+ S.atual={data:hojeISO(),tipo:tipo,dados:{},fim:false};
+ TREINOS[tipo].ex.forEach(function(ex){
+  S.atual.dados[ex.id]={carga:sugerida(ex),series:[],facil:null};
+ });
+ salvar();
+}
+function garantirSessao(){
+ if(S.atual&&S.atual.data===hojeISO())return;
+ if(S.atual&&!S.atual.fim&&!Object.keys(S.atual.dados).some(function(k){
+   return S.atual.dados[k].series.length;
+ })){S.atual=null;}
+ if(!S.atual||S.atual.data!==hojeISO())abrirSessao(proximoTipo());
+}
+function totalSeries(){
+ var t=0;TREINOS[S.atual.tipo].ex.forEach(function(ex){t+=alvoSeries(ex);});return t;
+}
+function feitasSeries(){
+ var t=0;TREINOS[S.atual.tipo].ex.forEach(function(ex){
+  t+=(S.atual.dados[ex.id].series||[]).length;});
+ return t;
+}
+function exCompleto(ex){
+ return (S.atual.dados[ex.id].series||[]).length>=alvoSeries(ex);
+}
+function volume(){
+ var v=0;
+ TREINOS[S.atual.tipo].ex.forEach(function(ex){
+  if(ex.tipo==="tempo")return;
+  var d=S.atual.dados[ex.id];
+  if(d.carga)v+=d.carga*d.series.length*(parseInt(ex.r,10)||0);
+ });
+ return v;
+}
+
+/* ---------- descanso ---------- */
+function descansar(seg,rot){
+ restam=seg;total=seg;
+ document.getElementById("rotulo").textContent=rot||"Descanso";
+ document.getElementById("descanso").classList.add("on");
+ pintaTimer();
+ clearInterval(timer);
+ timer=setInterval(function(){
+  restam--;pintaTimer();
+  if(restam<=0)fimDescanso();
+ },1000);
+}
+function pintaTimer(){
+ var m=Math.floor(Math.max(0,restam)/60),s=Math.max(0,restam)%60;
+ document.getElementById("tempo").textContent=m+":"+String(s).padStart(2,"0");
+ document.getElementById("barra").style.width=(total?Math.max(0,restam)/total*100:0)+"%";
+}
+function fimDescanso(){
+ clearInterval(timer);timer=null;
+ document.getElementById("descanso").classList.remove("on");
+ try{if(navigator.vibrate)navigator.vibrate([160,90,160]);}catch(e){}
+ bip();
+}
+function bip(){
+ try{
+  var C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  var c=new C(),o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);
+  o.frequency.value=680;o.type="sine";
+  g.gain.setValueAtTime(.0001,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.18,c.currentTime+.02);
+  g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.5);
+  o.start();o.stop(c.currentTime+.52);
+ }catch(e){}
+}
+async function manterAcesa(){
+ try{if("wakeLock" in navigator)wake=await navigator.wakeLock.request("screen");}catch(e){}
+}
+
+/* ---------- ações ---------- */
+function mudarCarga(exId,delta){
+ var ex=achaEx(exId),d=S.atual.dados[exId];
+ var base=d.carga==null?0:d.carga;
+ d.carga=Math.max(0,Math.round((base+delta)*10)/10);
+ salvar();render();
+}
+function achaEx(id){
+ var lista=TREINOS[S.atual.tipo].ex;
+ for(var i=0;i<lista.length;i++)if(lista[i].id===id)return lista[i];
+ return null;
+}
+function tocaSerie(exId,i){
+ var ex=achaEx(exId),d=S.atual.dados[exId];
+ if(ex.tipo!=="tempo"&&d.carga==null){aviso("Escolha a carga antes de marcar a série");return;}
+ if(d.series.length>i){d.series=d.series.slice(0,i);salvar();render();return;}
+ d.series.push(Date.now());
+ salvar();render();
+ if(ex.tipo==="tempo"&&d.series.length<=alvoSeries(ex)){descansar(ex.desc,"Descanso · "+ex.n);}
+ else if(d.series.length<alvoSeries(ex)){descansar(ex.desc,"Descanso · "+ex.n);}
+ else{fimDescansoSuave();}
+}
+function fimDescansoSuave(){
+ clearInterval(timer);timer=null;
+ document.getElementById("descanso").classList.remove("on");
+}
+function marcaFacil(exId,v){
+ S.atual.dados[exId].facil=v;salvar();render();
+ aviso(v?"Na próxima o app já sobe a carga":"Mantém a carga na próxima");
+}
+function encerrar(){
+ if(!feitasSeries()){aviso("Nenhuma série marcada ainda");return;}
+ S.atual.fim=true;
+ S.sessoes.push(S.atual);
+ S.atual=null;salvar();
+ try{if(wake){wake.release();wake=null;}}catch(e){}
+ render();
+ aviso("Treino registrado");
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- desenho ---------- */
+function render(){
+ garantirSessao();
+ var tipo=S.atual.tipo,lista=TREINOS[tipo].ex;
+ document.getElementById("sigla").textContent=tipo;
+ document.getElementById("data").textContent=fmtData(S.atual.data)+" · semana "+semana();
+
+ var p=document.getElementById("prog"),tot=totalSeries(),fs=feitasSeries(),h="";
+ for(var i=0;i<tot;i++)h+='<i class="'+(i<fs?"on":i===fs?"now":"")+'"></i>';
+ p.innerHTML=h;
+
+ var out="";
+ if(adaptacao()){
+  out+='<div class="nota"><b>Semanas 1 e 2 são de adaptação.</b> Uma série a menos e carga leve: '+
+   'você deve sair de cada série sentindo que daria para fazer mais cinco repetições. '+
+   'Dor forte no terceiro dia é o motivo número um de desistência.</div>';
+ }
+ if(!feitas().length){
+  out+='<div class="nota">Primeiro dia: use o treino para descobrir a carga de cada aparelho. '+
+   'Comece leve, ajuste nos botões e marque a série. O app guarda e sugere sozinho na próxima vez.</div>';
+ }
+
+ lista.forEach(function(ex){
+  var d=S.atual.dados[ex.id],u=ultima(ex.id),comp=exCompleto(ex),alvo=alvoSeries(ex);
+  var ativo=!comp&&d.series.length>0;
+  out+='<div class="ex'+(comp?" completo":ativo?" ativo":"")+'">';
+  out+='<div class="exhead"><div class="exnome">'+ex.n+'</div>'+
+       '<div class="exmeta">'+alvo+' × '+ex.r+'</div></div>';
+
+  out+='<div class="excorpo">';
+  if(ex.tipo==="tempo"){
+   out+='<div class="cargaval"><span class="n">'+ex.r+'</span><span class="u">por série</span></div>';
+  }else{
+   out+='<div class="carga">'+
+     '<button class="step" data-carga="'+ex.id+'" data-d="-'+ex.passo+'" aria-label="Diminuir">−</button>'+
+     '<div class="cargaval'+(d.carga==null?" vazio":"")+'">'+
+       '<span class="n">'+(d.carga==null?"—":fmtNum(d.carga))+'</span>'+
+       '<span class="u">kg</span></div>'+
+     '<button class="step" data-carga="'+ex.id+'" data-d="'+ex.passo+'" aria-label="Aumentar">+</button>'+
+    '</div>';
+  }
+  out+='<div class="series">';
+  for(var k=0;k<alvo;k++){
+   var f=d.series.length>k;
+   out+='<button class="serie'+(f?" feita":"")+'" data-serie="'+ex.id+'" data-i="'+k+'">'+
+        (f?"✓":(k+1))+'</button>';
+  }
+  out+='</div></div>';
+
+  if(u){
+   var dif=d.carga!=null?d.carga-u.carga:0;
+   out+='<div class="ant">'+fmtData(u.data)+': '+fmtNum(u.carga)+' kg';
+   if(dif>0)out+=' <span class="seta">▲ +'+fmtNum(dif)+'</span>';
+   if(dif<0)out+=' <span class="seta baixa">▼ '+fmtNum(dif)+'</span>';
+   out+='</div>';
+  }
+  if(comp&&d.facil==null&&ex.tipo!=="tempo"){
+   out+='<div class="prox"><span>A última série saiu com folga?</span>'+
+    '<button class="pbtn sim" data-facil="'+ex.id+'" data-v="1">Sim, dava mais</button>'+
+    '<button class="pbtn" data-facil="'+ex.id+'" data-v="0">Não, no limite</button></div>';
+  }
+  out+='</div>';
+ });
+
+ out+='<div class="acao"><button class="abtn" id="btFim">Encerrar e salvar o treino</button>';
+ if(feitas().length)out+='<button class="abtn fraco" id="btVerHist">Ver histórico de cargas</button>';
+ out+='</div>';
+
+ if(feitas().length){
+  var vol=volume();
+  out+='<div class="resumo"><h2>Até aqui</h2>'+
+   '<p>Progressão de carga é o sinal que manda o corpo preservar músculo enquanto você perde peso. '+
+   'Por isso o número que importa aqui é a carga subindo, não a balança descendo.</p>'+
+   '<div class="nums">'+
+    '<div class="num"><div class="v">'+feitas().length+'</div><div class="l">treinos feitos</div></div>'+
+    '<div class="num"><div class="v">'+semana()+'</div><div class="l">semanas</div></div>'+
+    (vol?'<div class="num"><div class="v">'+Math.round(vol/1000)+'t</div><div class="l">volume hoje</div></div>':"")+
+   '</div></div>';
+ }
+ document.getElementById("app").innerHTML=out;
+}
+function fmtNum(n){
+ return (Math.round(n*10)/10).toString().replace(".",",");
+}
+
+function renderHist(){
+ var out='<div class="nota">Cada barra é um treino. A barra em âmbar é a carga mais recente. '+
+  'Se a linha está subindo, o plano está funcionando mesmo que a balança demore.</div>';
+ ["A","B"].forEach(function(t){
+  out+='<div class="hist"><h3>'+TREINOS[t].nome+'</h3>';
+  var algum=false;
+  TREINOS[t].ex.forEach(function(ex){
+   if(ex.tipo==="tempo")return;
+   var vals=serie(ex.id);
+   if(!vals.length)return;
+   algum=true;
+   var max=Math.max.apply(null,vals),ult=vals.slice(-8);
+   out+='<div class="hlin"><div class="hnome">'+ex.n+'</div><div class="hvals">';
+   ult.forEach(function(v,i){
+    var alt=max?Math.max(3,Math.round(v/max*28)):3;
+    out+='<div class="hbar'+(i===ult.length-1?" ult":"")+'" style="height:'+alt+'px"></div>';
+   });
+   out+='</div><div class="hcarga">'+fmtNum(vals[vals.length-1])+'</div></div>';
+  });
+  if(!algum)out+='<div class="vazio">Nenhum registro ainda neste treino.</div>';
+  out+='</div>';
+ });
+ out+='<div class="acao"><button class="abtn fraco" id="btVoltar">Voltar ao treino de hoje</button></div>';
+ document.getElementById("app").innerHTML=out;
+ document.getElementById("btVoltar").onclick=function(){render();window.scrollTo(0,0);};
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",function(e){
+ var t=e.target.closest("[data-carga]");
+ if(t){mudarCarga(t.getAttribute("data-carga"),parseFloat(t.getAttribute("data-d")));manterAcesa();return;}
+ t=e.target.closest("[data-serie]");
+ if(t){tocaSerie(t.getAttribute("data-serie"),+t.getAttribute("data-i"));manterAcesa();return;}
+ t=e.target.closest("[data-facil]");
+ if(t){marcaFacil(t.getAttribute("data-facil"),t.getAttribute("data-v")==="1");return;}
+ if(e.target.id==="btFim"){encerrar();return;}
+ if(e.target.id==="btVerHist"){renderHist();window.scrollTo(0,0);return;}
+});
+document.getElementById("btPular").onclick=fimDescanso;
+function pintaDataInfo(){
+ var el=document.getElementById("dataInfo"),ini=inicioISO();
+ if(!ini){el.textContent="Sem data definida: a contagem começa no seu primeiro treino registrado.";return;}
+ var txt=fmtData(ini)+" · hoje é a semana "+semana();
+ if(!S.inicio)txt+=" (vindo do primeiro treino registrado)";
+ if(adaptacao())txt+=". Ainda em adaptação.";
+ el.textContent=txt;
+}
+document.getElementById("btMenu").onclick=function(){
+ document.getElementById("trocarInfo").textContent=
+  "Hoje está marcado como "+TREINOS[S.atual.tipo].nome+". Toque para usar o outro.";
+ document.getElementById("inicio").value=inicioISO()||"";
+ pintaDataInfo();
+ document.getElementById("painel").classList.add("on");
+};
+document.getElementById("btSalvarData").onclick=function(){
+ var v=document.getElementById("inicio").value;
+ if(!v){
+  S.inicio=null;salvar();pintaDataInfo();render();
+  aviso("Voltou a contar pelo primeiro treino");
+  return;
+ }
+ S.inicio=v;salvar();render();pintaDataInfo();
+ aviso("Semana "+semana()+(adaptacao()?" · adaptação":""));
+};
+document.getElementById("btFechar").onclick=function(){
+ document.getElementById("painel").classList.remove("on");
+};
+document.getElementById("painel").onclick=function(e){
+ if(e.target.id==="painel")this.classList.remove("on");
+};
+document.getElementById("btTrocar").onclick=function(){
+ if(feitasSeries()&&!confirm("Trocar o treino apaga as séries já marcadas hoje. Continuar?"))return;
+ abrirSessao(S.atual.tipo==="A"?"B":"A");
+ document.getElementById("painel").classList.remove("on");
+ render();aviso("Agora é o "+TREINOS[S.atual.tipo].nome);
+};
+document.getElementById("btHist").onclick=function(){
+ document.getElementById("painel").classList.remove("on");renderHist();window.scrollTo(0,0);
+};
+document.getElementById("btExport").onclick=function(){
+ var blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});
+ var a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="cargas-"+hojeISO()+".json";
+ a.click();
+ document.getElementById("painel").classList.remove("on");
+ aviso("Cópia salva");
+};
+document.getElementById("btImport").onclick=function(){document.getElementById("arq").click();};
+document.getElementById("arq").onchange=function(e){
+ var f=e.target.files[0];if(!f)return;
+ var r=new FileReader();
+ r.onload=function(){
+  try{
+   var d=JSON.parse(r.result);
+   if(!d.sessoes)throw 0;
+   S=d;salvar();render();
+   document.getElementById("painel").classList.remove("on");
+   aviso("Dados restaurados");
+  }catch(err){aviso("Arquivo não reconhecido");}
+ };
+ r.readAsText(f);
+ e.target.value="";
+};
+document.getElementById("btZerar").onclick=function(){
+ if(!confirm("Apagar todos os treinos e cargas registrados? Isso não tem volta."))return;
+ S={sessoes:[],atual:null};salvar();
+ document.getElementById("painel").classList.remove("on");
+ render();aviso("Tudo apagado");
+};
+document.addEventListener("visibilitychange",function(){
+ if(document.visibilityState==="visible"&&wake===null&&timer)manterAcesa();
+});
+
+carregar();render();
+</script>
+</body>
+</html>
